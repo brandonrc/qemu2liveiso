@@ -158,7 +158,7 @@ EOF
 configure_dracut() {
     sudo mkdir -p "$TMP_SQUASHFS_DIR/etc/dracut.conf.d/"
 
-    cat << EOF | sudo tee "$MODULE_PATH/etc/dracut.conf.d/01-liveos.conf"
+    cat << EOF | sudo tee "$TMP_SQUASHFS_DIR/etc/dracut.conf.d/01-liveos.conf"
 mdadmconf="no"
 lvmconf="no"
 squash_compress="xz"
@@ -241,6 +241,8 @@ extract_tar_xz() {
 
     # Extract the tar.xz file to the temporary directory
     sudo tar -xf "$TAR_FILE_PATH" -C "$TMP_SQUASHFS_DIR"
+
+    export kernel_version=$(ls "$TMP_SQUASHFS_DIR/lib/modules/" | sort -V | tail -n 1)
 }
 
 create_squashfs_from_rootfs() {
@@ -249,8 +251,6 @@ create_squashfs_from_rootfs() {
         echo "Directory $extracted_fs_root/lib/modules/ does not exist"
         return 1
     fi
-
-    export kernel_version=$(ls "$TMP_SQUASHFS_DIR/lib/modules/" | sort -V | tail -n 1)
 
     # Create the SquashFS filesystem
     sudo mksquashfs "$TMP_SQUASHFS_DIR" "$SQUASHFS_OUTPUT_PATH" -comp xz
@@ -262,7 +262,38 @@ install_packages() {
     sudo mount -o bind /proc "$TMP_SQUASHFS_DIR"/proc
     sudo mount -o bind /sys "$TMP_SQUASHFS_DIR"/sys
     sudo mount -o bind /dev "$TMP_SQUASHFS_DIR"/dev
-    sudo yum --installroot=$TMP_SQUASHFS_DIR install kernel-core kernel-modules kernel-modules-extra dracut* -y --nogpgcheck
+    
+    sudo yum --installroot=$TMP_SQUASHFS_DIR install -y --nogpgcheck \
+    biosdevname \
+    bluez \
+    btrfs-progs \
+    cifs-utils \
+    connman \
+    device-mapper-multipath \
+    dhcp-client \
+    dmraid \
+    dracut* \
+    fcoe-utils \
+    gnupg2 \
+    iscsi-initiator-utils \
+    jq \
+    kernel-core \
+    kernel-modules \
+    kernel-modules-extra \
+    lvm2 \
+    mdadm \
+    memstrack \
+    nbd \
+    nfs-utils \
+    ntfs-3g \
+    nvme-cli \
+    openssh-clients \
+    pcsc-lite \
+    rng-tools \
+    systemd \
+    tpm2-tss \
+    wicked
+
     sudo umount "$TMP_SQUASHFS_DIR"/proc
     sudo umount "$TMP_SQUASHFS_DIR"/sys
     sudo umount "$TMP_SQUASHFS_DIR"/dev
@@ -274,13 +305,13 @@ install_packages() {
 func_order=( "create_directories"
              "extract_tar_xz"
              "install_packages"
-             "create_squashfs_from_rootfs"
              "create_grub_cfg"
              "create_module_setup"
              "create_live_root_script"
              "configure_dracut"
              "create_initramfs"
              "copy_vmlinuz"
+             "create_squashfs_from_rootfs"
              "create_iso"
              "clean_up" )
 
