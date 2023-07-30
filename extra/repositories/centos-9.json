@@ -1,0 +1,34 @@
+{
+    "x86_64": [
+      {
+        "baseurl": "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/",
+        "name": "base",
+        "check_gpg": false
+      },
+      {
+        "baseurl": "https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/",
+        "name": "appstream",
+        "check_gpg": false
+      },
+      {
+        "baseurl": "https://mirror.stream.centos.org/SIGs/9-stream/extras/x86_64/",
+        "name": "extras",
+        "check_gpg": false
+      },
+      {
+        "baseurl": "http://download.fedoraproject.org/pub/epel/9/Everything/x86_64/",
+        "name": "epel",
+        "check_gpg": false
+      },
+      {
+        "baseurl": "http://download.fedoraproject.org/pub/epel/next/9/Everything/x86_64/",
+        "name": "epel-next",
+        "check_gpg": false
+      },
+      {
+        "baseurl": "https://mirror.stream.centos.org/SIGs/9-stream/hyperscale/x86_64/packages-experimental/",
+        "name": "hyperscale-experimental",
+        "check_gpg": false
+      }
+    ]
+}
