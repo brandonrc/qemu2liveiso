@@ -15,15 +15,7 @@ name = "bluez"
 version = "*"
 
 [[packages]]
-name = "btrfs-progs"
-version = "*"
-
-[[packages]]
 name = "cifs-utils"
-version = "*"
-
-[[packages]]
-name = "connman"
 version = "*"
 
 [[packages]]
@@ -32,10 +24,6 @@ version = "*"
 
 [[packages]]
 name = "dhcp-client"
-version = "*"
-
-[[packages]]
-name = "dmraid"
 version = "*"
 
 [[packages]]
@@ -116,10 +104,6 @@ version = "*"
 
 [[packages]]
 name = "tpm2-tss"
-version = "*"
-
-[[packages]]
-name = "wicked"
 version = "*"
 
 [[users]]
