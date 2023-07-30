@@ -67,7 +67,7 @@ clean_up() {
 }
 
 create_iso() {
-    grub2-mkrescue -o $ISO_OUTPUT_DIR/live.iso $MAIN_TMP_DIR
+    sudo grub2-mkrescue -o $ISO_OUTPUT_DIR/live.iso $MAIN_TMP_DIR
     # Needs a package sudo dnf install genisoimage
     # mkisofs -o live.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -R -J -v -T $MAIN_TMP_DIR
 
@@ -75,8 +75,10 @@ create_iso() {
 
 # Function to create directories
 create_directories() {
-    mkdir -p "$MAIN_TMP_DIR"/boot/grub
-    mkdir -p "$MAIN_TMP_DIR"/LiveOS
+    sudo mkdir -p "$MAIN_TMP_DIR"/boot/grub
+    sudo chmod 0777 -R "$MAIN_TMP_DIR"
+    sudo mkdir -p "$MAIN_TMP_DIR"/LiveOS
+    sudo chmod 0777 -R "$MAIN_TMP_DIR"
 }
 
 copy_vmlinuz() {
@@ -259,19 +261,36 @@ create_squashfs_from_rootfs() {
 }
 
 install_packages() {
-    sudo mount -o bind /proc "$TMP_SQUASHFS_DIR"/proc
-    sudo mount -o bind /sys "$TMP_SQUASHFS_DIR"/sys
-    sudo mount -o bind /dev "$TMP_SQUASHFS_DIR"/dev
-    
+    # array of paths to mount and unmount
+    paths_to_mount=("/proc" "/sys" "/dev")
+
+    for path in "${paths_to_mount[@]}"; do
+        sudo mount -o bind $path "$TMP_SQUASHFS_DIR$path"
+        if [ $? -ne 0 ]; then
+            echo "Failed to mount $path"
+            return 1
+        fi
+    done
+
+    # sudo dnf install epel-release epel-next-release --nogpgcheck -y
+    sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+    if [ $? -ne 0 ]; then
+        echo "Failed to install epel-release and epel-next-release"
+        return 1
+    fi
+
+    sudo dnf update -y
+    if [ $? -ne 0 ]; then
+        echo "Failed to do a dnf update"
+        return 1
+    fi
+
     sudo yum --installroot=$TMP_SQUASHFS_DIR install -y --nogpgcheck \
     biosdevname \
     bluez \
-    btrfs-progs \
     cifs-utils \
-    connman \
     device-mapper-multipath \
     dhcp-client \
-    dmraid \
     dracut* \
     fcoe-utils \
     gnupg2 \
@@ -291,15 +310,22 @@ install_packages() {
     pcsc-lite \
     rng-tools \
     systemd \
-    tpm2-tss \
-    wicked
+    tpm2-tss
+    if [ $? -ne 0 ]; then
+        echo "Failed to install packages"
+        return 1
+    fi
 
-    sudo umount "$TMP_SQUASHFS_DIR"/proc
-    sudo umount "$TMP_SQUASHFS_DIR"/sys
-    sudo umount "$TMP_SQUASHFS_DIR"/dev
-
-
+    # Unmount in reverse order
+    for ((idx=${#paths_to_mount[@]}-1 ; idx>=0 ; idx--)) ; do
+        sudo umount "$TMP_SQUASHFS_DIR${paths_to_mount[idx]}"
+        if [ $? -ne 0 ]; then
+            echo "Failed to unmount ${paths_to_mount[idx]}"
+            return 1
+        fi
+    done
 }
+
 
 # Define an ordered list of functions to execute
 func_order=( "create_directories"
