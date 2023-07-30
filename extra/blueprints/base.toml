@@ -1,0 +1,131 @@
+name = "test"
+description = "A detailed blueprint"
+version = "0.0.1"
+
+[[packages]]
+name = "bash"
+version = "*"
+
+[[packages]]
+name = "biosdevname"
+version = "*"
+
+[[packages]]
+name = "bluez"
+version = "*"
+
+[[packages]]
+name = "btrfs-progs"
+version = "*"
+
+[[packages]]
+name = "cifs-utils"
+version = "*"
+
+[[packages]]
+name = "connman"
+version = "*"
+
+[[packages]]
+name = "device-mapper-multipath"
+version = "*"
+
+[[packages]]
+name = "dhcp-client"
+version = "*"
+
+[[packages]]
+name = "dmraid"
+version = "*"
+
+[[packages]]
+name = "dracut"
+version = "*"
+
+[[packages]]
+name = "fcoe-utils"
+version = "*"
+
+[[packages]]
+name = "gnupg2"
+version = "*"
+
+[[packages]]
+name = "iscsi-initiator-utils"
+version = "*"
+
+[[packages]]
+name = "jq"
+version = "*"
+
+[[packages]]
+name = "kernel-core"
+version = "*"
+
+[[packages]]
+name = "kernel-modules"
+version = "*"
+
+[[packages]]
+name = "kernel-modules-extra"
+version = "*"
+
+[[packages]]
+name = "lvm2"
+version = "*"
+
+[[packages]]
+name = "mdadm"
+version = "*"
+
+[[packages]]
+name = "memstrack"
+version = "*"
+
+[[packages]]
+name = "nbd"
+version = "*"
+
+[[packages]]
+name = "nfs-utils"
+version = "*"
+
+[[packages]]
+name = "ntfs-3g"
+version = "*"
+
+[[packages]]
+name = "nvme-cli"
+version = "*"
+
+[[packages]]
+name = "openssh-clients"
+version = "*"
+
+[[packages]]
+name = "pcsc-lite"
+version = "*"
+
+[[packages]]
+name = "rng-tools"
+version = "*"
+
+[[packages]]
+name = "systemd"
+version = "*"
+
+[[packages]]
+name = "tpm2-tss"
+version = "*"
+
+[[packages]]
+name = "wicked"
+version = "*"
+
+[[users]]
+name = "admin"
+description = "Admin user"
+password = "$6$fdfH/6HpkKpQnSC0$l/ra2XjIPEydM6HyhAUWCxAjLDF5KKT2WhOeluGaEN2pK7NVy/bKdIt1/NS/YQSwaOsp9EsFhsbBSAQKqY5CJ0"
+home = "/home/admin"
+shell = "/bin/bash"
+groups = ["wheel"]
