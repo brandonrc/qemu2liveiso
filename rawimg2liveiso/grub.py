@@ -13,15 +13,21 @@ def configure_grub(tmp_iso_dir: str):
     grub_conf = os.path.join(grub_conf_dir, "grub.cfg")
 
     grub_config = """
-    search --no-floppy --set=root -l 'Fedora-LiveOS'
-    set default="0"
     set timeout=10
+    set default=0
 
-    menuentry 'Start Fedora LiveOS' {
-        echo 'Loading kernel ...'
-        linux /images/pxeboot/vmlinuz root=live:CDLABEL=Fedora-LiveOS rd.live.image quiet rhgb rd.luks=0 rd.md=0 rd.dm=0
-        echo 'Loading initrd ...'
-        initrd /images/pxeboot/initrd.img
+    menuentry "My Live System" {
+        set root=(hd0,1)
+        linux /boot/vmlinuz \
+            root=/dev/ram0 \
+            rd.live.image \
+            rd.luks=0 \
+            rd.md=0 \
+            rd.dm=0 \
+            debug \
+            console=tty0 \
+            console=ttyS0,115200n8
+        initrd /boot/initramfs.img
     }
     """
 

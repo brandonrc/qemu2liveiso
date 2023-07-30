@@ -24,6 +24,21 @@ def create_initramfs(tmp_squashfs_dir: str):
         initramfs_img
     ]
 
+    dracut_cmd = [
+        "sudo",
+        "dracut",
+        "--force",
+        "--verbose", 
+        "--sysroot", 
+        tmp_squashfs_dir,
+        "--kver", 
+        "$kernel_version",
+        "--include", 
+        "$MODULE_PATH",
+        initramfs_img
+"
+    ]
+
     try:
         subprocess.run(dracut_cmd, check=True)
         logger.info(f"Initramfs image created at {initramfs_img}")
