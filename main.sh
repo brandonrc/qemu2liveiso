@@ -51,7 +51,7 @@ SQUASHFS_OUTPUT_PATH="$MAIN_TMP_DIR/LiveOS/rootfs.squashfs"
 # initramfs Variables
 OUTPUT_INITRAMFS_IMG="$BOOT_PATH/initramfs.img"
 OUTPUT_VMLINUZ="$BOOT_PATH/vmlinuz"
-DRACUT_DIR="$TMP_SQUASHFS_DIR/usr/lib/dracut/modules.d"
+DRACUT_DIR="/usr/lib/dracut/modules.d"
 MODULE_NAME="99live"
 MODULE_PATH="$DRACUT_DIR/$MODULE_NAME"
 MODULE_SETUP_FILE="module-setup.sh"
@@ -82,9 +82,10 @@ create_directories() {
 }
 
 copy_vmlinuz() {
+    echo "---------------COPY VMLINUZ ----------------"
+    echo "VMLINUZ filename is located: vmlinuz-${kernel_version}"
     local vmlinuz_filename="vmlinuz-${kernel_version}"
-    local latest_initramfs="/boot/$initramfs_filename"
-    sudo cp "$latest_initramfs" "$OUTPUT_VMLINUZ"
+    sudo cp -r /boot/"$vmlinuz_filename" "$OUTPUT_VMLINUZ"
 }
 
 create_grub_cfg() {
@@ -110,8 +111,8 @@ EOF
 
 # Function to create module-setup.sh file
 create_module_setup() {
-    sudo mkdir -p "$MODULE_PATH"
-    cat << EOF | sudo tee "$MODULE_PATH/$MODULE_SETUP_FILE"
+    sudo mkdir -p "$TMP_SQUASHFS_DIR/$MODULE_PATH"
+    cat << EOF | sudo tee "$TMP_SQUASHFS_DIR/$MODULE_PATH/$MODULE_SETUP_FILE"
 #!/bin/bash
 
 check() {
@@ -127,12 +128,12 @@ install() {
     inst /sbin/pivot_root
 }
 EOF
-    sudo chmod +x "$MODULE_PATH/$MODULE_SETUP_FILE"
+    sudo chmod +x "$TMP_SQUASHFS_DIR/$MODULE_PATH/$MODULE_SETUP_FILE"
 }
 
 # Function to create live-root.sh file
 create_live_root_script() {
-    cat << EOF | sudo tee "$MODULE_PATH/$LIVE_ROOT_SCRIPT"
+    cat << EOF | sudo tee "$TMP_SQUASHFS_DIR/$MODULE_PATH/$LIVE_ROOT_SCRIPT"
 #!/bin/bash
 
 # Print some debugging information
@@ -154,7 +155,7 @@ pivot_root /sysroot /sysroot/initrd
 # Start the regular boot process
 exec /sbin/init
 EOF
-    sudo chmod +x "$MODULE_PATH/$LIVE_ROOT_SCRIPT"
+    sudo chmod +x "$TMP_SQUASHFS_DIR/$MODULE_PATH/$LIVE_ROOT_SCRIPT"
 }
 
 configure_dracut() {
@@ -211,6 +212,12 @@ create_initramfs() {
     fi
 
     dracut_status=$?
+
+    echo "-------------------------------"
+    echo "MODULE_PATH: $MODULE_PATH"
+    echo "TMP_SQUASHFS_DIR: $TMP_SQUASHFS_DIR"
+    echo "OUTPUT_INITRAMFS_IMG: $OUTPUT_INITRAMFS_IMG"
+    echo "-------------------------------"
 
     # After dracut command
     if [ $dracut_status -ne 0 ]; then
