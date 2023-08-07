@@ -94,7 +94,7 @@ set timeout=10
 set default=0
 
 menuentry "My Live System" {
-    set root=(hd0,1)
+    search --no-floppy --set=root --label MY_LIVE_SYSTEM
     linux /boot/vmlinuz \
         root=/dev/ram0 \
         rd.live.image \
