@@ -1,4 +1,4 @@
-name = "test"
+name = "test-live"
 description = "A detailed blueprint"
 version = "0.0.1"
 
@@ -113,3 +113,13 @@ password = "$6$fdfH/6HpkKpQnSC0$l/ra2XjIPEydM6HyhAUWCxAjLDF5KKT2WhOeluGaEN2pK7NV
 home = "/home/admin"
 shell = "/bin/bash"
 groups = ["wheel"]
+
+
+[customizations.kernel]
+args = "console=ttyS0"
+
+[[customizations.filesystem]]
+name = "root"
+mountpoint = "/"
+size = 4096  # This is just an example size, in MiB.
+type = "ext4"

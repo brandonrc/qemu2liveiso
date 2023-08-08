@@ -1,0 +1,8 @@
+#!/bin/bash
+yum install osbuild-composer composer-cli cockpit-composer bash-completion
+systemctl enable --now osbuild-composer.socket
+systemctl enable --now cockpit.socket
+source /etc/bash_completion.d/composer-cli
+
+
+#TODO: Add user to weldr group

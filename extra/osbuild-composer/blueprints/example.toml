@@ -35,3 +35,8 @@ destination = "/etc/custom/file.txt"
 [customizations.kernel]
 args = "console=ttyS0"
 
+[[customizations.filesystem]]
+name = "root"
+mountpoint = "/"
+size = 4096  # This is just an example size, in MiB.
+type = "ext4"
