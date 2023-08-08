@@ -1,0 +1,37 @@
+name = "basic-image"
+description = "A basic example image blueprint"
+
+[[packages]]
+name = "httpd"
+version = "*"
+
+[[packages]]
+name = "nginx"
+version = "latest"
+
+[[customizations]]
+name = "timezone"
+data = "UTC"
+
+[[customizations]]
+name = "users"
+state = "present"
+users = [
+  { name = "user1", password = "$6$rounds=10000$salt$hash", ssh_authorized_keys = ["ssh-rsa public_key"] }
+]
+
+[[customizations]]
+name = "scripts"
+script = """
+#!/bin/bash
+echo 'Hello, this is a custom script!'
+"""
+
+[[customizations]]
+name = "files"
+source = "path/to/source/file.txt"
+destination = "/etc/custom/file.txt"
+
+[customizations.kernel]
+args = "console=ttyS0"
+

@@ -1,0 +1,9 @@
+[[source]]
+name = "epel"
+id = "epel"
+url = "https://dl.fedoraproject.org/pub/epel/$releasever/Everything/$basearch/os/"
+type = "yum-baseurl"
+check_gpg = true
+check_ssl = true
+system = false
+
