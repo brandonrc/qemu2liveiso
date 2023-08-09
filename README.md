@@ -80,18 +80,27 @@ LOOP_DEVICE=/dev/nbd0
 Now, use `parted` to set up partitions automatically:
 
 ```bash
-sudo parted $LOOP_DEVICE mklabel gpt
-sudo parted $LOOP_DEVICE mkpart primary fat32 1MiB 513MiB
+#!/bin/bash
+sudo parted -s $LOOP_DEVICE mklabel gpt
+
+# Create an EFI System Partition
+sudo parted -s $LOOP_DEVICE mkpart primary fat32 1MiB 513MiB
 sudo parted $LOOP_DEVICE set 1 esp on
-sudo parted $LOOP_DEVICE mkpart primary ext4 513MiB 100%
+
+# Create a BIOS Boot Partition
+sudo parted -s $LOOP_DEVICE mkpart primary 513MiB 515MiB
+sudo parted $LOOP_DEVICE set 2 bios_grub on
+
+# Create the main partition
+sudo parted -s $LOOP_DEVICE mkpart primary ext4 515MiB 100%
 ```
 
-Format the partitions:
+<!-- Format the partitions:
 
 ```bash
 sudo mkfs.vfat ${LOOP_DEVICE}p1
 sudo mkfs.ext4 ${LOOP_DEVICE}p2
-```
+``` -->
 
 ### 3. Mounting and Copying Data:
 
@@ -101,7 +110,7 @@ Mount the partitions:
 mkdir -p /mnt/virtual_usb_efi
 mkdir -p /mnt/virtual_usb_os
 sudo mount ${LOOP_DEVICE}p1 /mnt/virtual_usb_efi
-sudo mount ${LOOP_DEVICE}p2 /mnt/virtual_usb_os
+sudo mount ${LOOP_DEVICE}p3 /mnt/virtual_usb_os
 ```
 
 Now you can copy your data, kernel, initramfs, and other necessary files into `/mnt/virtual_usb_os`.
