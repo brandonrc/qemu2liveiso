@@ -48,7 +48,7 @@ mount_filesystems() {
 process_image() {
     cd $USB_OS_DIR
     log "Creating squashfs root image..."
-    sudo mksquashfs $ROOT_DIR custom_root.squashfs
+    sudo mksquashfs $ROOT_DIR myroot.squashfs
 
     log "Extracting vmlinuz and initramfs..."
     sudo cp $ROOT_DIR/boot/vmlinuz-* $USB_OS_DIR/vmlinuz
