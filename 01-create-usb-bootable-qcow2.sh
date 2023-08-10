@@ -2,12 +2,6 @@
 
 set -euo pipefail
 
-# Variables
-LOOP_DEVICE="/dev/nbd0"
-USB_EFI_DIR="/mnt/virtual_usb_efi"
-USB_OS_DIR="/mnt/virtual_usb_os"
-GRUB_CMD=""
-
 # Logging function to display messages with timestamps
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
@@ -55,6 +49,8 @@ setup_loop_device() {
     sudo mkfs.vfat ${LOOP_DEVICE}p1
     sudo mkfs.ext4 ${LOOP_DEVICE}p3
 
+    sudo e2label ${LOOP_DEVICE}p3 MY_LIVE_SYSTEM
+
     sudo mkdir -p $USB_EFI_DIR
     sudo mkdir -p $USB_OS_DIR
     sudo mount ${LOOP_DEVICE}p1 $USB_EFI_DIR
@@ -79,6 +75,35 @@ install_grub() {
     sudo $GRUB_CMD --target=i386-pc --boot-directory=$USB_OS_DIR/boot $LOOP_DEVICE
 }
 
+create_grub_config() {
+    grub_cfg_path="$USB_OS_DIR/boot/grub/grub.cfg"
+    
+    # Ensure the directory exists
+    sudo mkdir -p "$(dirname "$grub_cfg_path")"
+
+    # Write the content to the file
+    sudo bash -c "cat > $grub_cfg_path" << 'EOF'
+set timeout=10
+set default=0
+
+serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1
+terminal_input console serial
+terminal_output console serial
+set debug=all
+
+menuentry 'My Custom RHEL8' {
+  search --no-floppy --set=root --label MY_LIVE_SYSTEM
+  linux /vmlinuz rootfstype=squashfs rootflags=loop real_root=/myroot.squashfs console=tty0 console=ttyS0,115200n8 earlyprintk=serial,ttyS0,115200n8 loglevel=7 debug ignore_loglevel
+  initrd /initramfs
+}
+
+EOF
+}
+
+# Later in your script, you can simply call:
+# create_grub_config
+
+
 # Final cleanup steps
 final_cleanup() {
     log "Cleaning up..."
@@ -90,10 +115,18 @@ final_cleanup() {
 
 # Main function to coordinate script execution
 main() {
+
+    # Variables
+    LOOP_DEVICE="/dev/nbd0"
+    USB_EFI_DIR="/mnt/virtual_usb_efi"
+    USB_OS_DIR="/mnt/virtual_usb_os"
+    GRUB_CMD=""
+
     load_nbd_module
     cleanup
     setup_loop_device
     install_grub
+    create_grub_config
     final_cleanup
 
     log "Script completed successfully!"
