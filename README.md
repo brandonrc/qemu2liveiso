@@ -6,11 +6,38 @@
 - Start with a pre-configured `qcow2` image named `custom.qcow2`.
 
 ### PACKAGES
+
+#### For RedHat/CentOS:
+
+1. **qemu-utils**: Part of the QEMU software package.
+2. **grub2**: Provides GRUB boot loader.
+3. **squashfs-tools**: For SquashFS file systems.
+4. **libguestfs-tools-c**: Provides tools for accessing and modifying guest disk images.
+5. **grub2-efi-x64-modules**: GRUB2 modules for UEFI for x64 machines.
+
+To install them:
+
+```bash
+sudo yum install qemu-img grub2 squashfs-tools libguestfs-tools-c grub2-efi-x64-modules
 ```
-sudo yum install \
-    libguestfs-tools-c \
-    grub2-efi-x64-modules
+
+#### For Ubuntu:
+
+1. **qemu-utils**: QEMU image management utilities.
+2. **grub-efi-amd64-bin**: GRUB EFI for AMD64 architectures.
+3. **grub-pc-bin**: General GRUB tools and modules.
+4. **squashfs-tools**: Tools for SquashFS file systems.
+5. **libguestfs-tools**: Tools for accessing and modifying guest disk images.
+
+To install them:
+
+```bash
+sudo apt-get update
+sudo apt-get install qemu-utils grub-efi-amd64-bin grub-pc-bin squashfs-tools libguestfs-tools
 ```
+
+
+
 
 ## 1. Creating the Root FS by Mounting the QCOW2 Image
 
@@ -29,13 +56,16 @@ sudo modprobe nbd max_part=16
 sudo qemu-nbd --connect=/dev/nbd1 custom.qcow2
 sudo mount /dev/nbd1p3 /mnt/myroot
 ROOTFS_DEVICE=/dev/nbd1
+#### Setup
 ```
 
-## 2. Creating a SquashFS Image
+```
 
-Navigate to the directory where you want to store your SquashFS image:
 
 ```bash
+sudo modprobe nbd max_part=16
+export ROOT_DIR=/mnt/myroot
+export USB_NBD=/dev/nbd1
 export TMPSTORE=/tmp/store
 mkdir -p $TMPSTORE
 cd $TMPSTORE
@@ -96,6 +126,24 @@ cp /mnt/myroot/boot/initramfs-*.img $TMPSTORE
 
 
 
+
+
+
+sudo mkdir -p $ROOT_DIR
+sudo mkdir -p $TMPSTORE
+sudo qemu-nbd --disconnect $USB_NBD
+sudo qemu-nbd --connect=$USB_NBD custom.qcow2
+sudo mount "$USB_NBD"p3 $ROOT_DIR
+
+# Making the squashfs root image
+cd $ROOT_DIR
+sudo mksquashfs /mnt/myroot custom_root.squashfs
+
+# Extracting the vmlinuz and initramfs
+sudo cp $ROOT_DIR/boot/vmlinuz-* $TMPSTORE
+sudo cp $ROOT_DIR/boot/initramfs-*.img $TMPSTORE
+
+```
 
 ## 4. Create usb drive image
 
