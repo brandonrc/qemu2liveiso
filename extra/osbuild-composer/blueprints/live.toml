@@ -1,0 +1,105 @@
+name = "live-iso"
+version = "1.0.0"
+description = "A Live ISO Image"
+
+
+[[packages]]
+name = "firefox"
+
+[[packages]]
+name = "gnome-terminal"
+
+[[packages]]
+name = "aajohan-comfortaa-fonts"
+
+[[packages]]
+name = "dracut-config-generic"
+
+[[packages]]
+name = "dracut-live"
+
+[[packages]]
+name = "glibc-all-langpacks"
+
+[[packages]]
+name = "grub2-efi"
+
+# Assuming the wildcard grub2-*-modules represents multiple packages
+# For now, let's include it as-is and you can modify it later.
+[[packages]]
+name = "grub2-*-modules"
+
+[[packages]]
+name = "kernel"
+
+[[packages]]
+name = "kernel-modules"
+
+[[packages]]
+name = "kernel-modules-extra"
+
+[[packages]]
+name = "memtest86+"
+
+[[packages]]
+name = "syslinux"
+
+[[packages]]
+name = "isomd5sum"
+
+[[groups]]
+name = "base-x"
+
+[[groups]]
+name = "fonts"
+
+[[groups]]
+name = "guest-desktop-agents"
+
+[[groups]]
+name = "hardware-support"
+
+[[groups]]
+name = "multimedia"
+
+[[groups]]
+name = "networkmanager-submodules"
+
+[[groups]]
+name = "workstation-product"
+
+[[groups]]
+name = "gnome-desktop"
+
+[customizations.services]
+enabled = ["NetworkManager, sshd"]
+
+
+[[customizations.user]]
+name = "admin"
+description = "Administrator account"
+password = "$6$qr36Zx3px9/pzIeY$E0XabhSMmr3Se2SUmfYk26CuhccxiKE4qaxi3kQxLG1s.x30Bin35s9hQOeJQeumRVA/zyX3zhg5ERhx6CBcx/"
+shell = "/usr/bin/bash"
+groups = ["users", "wheel"]
+uid = 1200
+gid = 1200
+
+
+[customizations.timezone]
+timezone = "US/Central"
+
+[customizations.locale]
+# System Timezone
+languages = ["en_US.UTF-8"]
+keyboard = "us"
+
+
+
+[customizations.firewall]
+ports = ["22:tcp", "80:tcp", "imap:tcp", "53:tcp", "53:udp", "30000-32767:tcp", "30000-32767:udp"]
+
+
+[[customizations.filesystem]]
+mountpoint = "/"
+size = 8147483648
+

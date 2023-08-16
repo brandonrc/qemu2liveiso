@@ -257,15 +257,31 @@ extract_tar_xz() {
 create_squashfs_from_rootfs() {
     # Check if the directory exists
     if [ ! -d "$TMP_SQUASHFS_DIR/lib/modules/" ]; then
-        echo "Directory $extracted_fs_root/lib/modules/ does not exist"
+        echo "Directory $TMP_SQUASHFS_DIR/lib/modules/ does not exist"
         return 1
     fi
 
+    # Calculate the size of the directory and create the rootfs image
+    dir_size=$(sudo du -sm "$TMP_SQUASHFS_DIR" | awk '{print $1}')
+    img_size=$((dir_size + 200)) # 200MB is arbitrary adjust as needed
+    dd if=/dev/zero of=rootfs.img bs=1M count=$img_size
+    mkfs.ext4 rootfs.img
+
+    # Mount the image and copy contents
+    sudo mount -o loop rootfs.img /mnt
+    sudo cp -a $TMP_SQUASHFS_DIR/* /mnt/
+    sudo umount /mnt
+
+    # Move rootfs.img into LiveOS directory
+    mkdir -p LiveOS
+    mv rootfs.img LiveOS/
+
     # Create the SquashFS filesystem
-    sudo mksquashfs "$TMP_SQUASHFS_DIR" "$SQUASHFS_OUTPUT_PATH" -comp xz
+    sudo mksquashfs LiveOS "$SQUASHFS_OUTPUT_PATH" -comp xz
 
     echo "SquashFS file system has been created as $SQUASHFS_OUTPUT_PATH"
 }
+
 
 install_packages() {
     # array of paths to mount and unmount

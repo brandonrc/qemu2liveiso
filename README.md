@@ -14,9 +14,21 @@ sudo yum install \
 
 ## 1. Creating the Root FS by Mounting the QCOW2 Image
 
+<!-- ```bash
+sudo mkdir -p /mnt/myroot
+sudo guestmount -a custom.qcow2 -m /dev/sda3 /mnt/myroot
+``` -->
+
 ```bash
-mkdir /mnt/myroot
-guestmount -a custom.qcow2 -m /dev/sda3 /mnt/myroot
+if lsblk | grep -q nbd1; then
+    echo "Cleaning up existing /dev/nbd1 connection..."
+    sudo qemu-nbd --disconnect /dev/nbd1
+fi
+
+sudo modprobe nbd max_part=16
+sudo qemu-nbd --connect=/dev/nbd1 custom.qcow2
+sudo mount /dev/nbd1p3 /mnt/myroot
+ROOTFS_DEVICE=/dev/nbd1
 ```
 
 ## 2. Creating a SquashFS Image
@@ -26,9 +38,50 @@ Navigate to the directory where you want to store your SquashFS image:
 ```bash
 export TMPSTORE=/tmp/store
 mkdir -p $TMPSTORE
-cd /path/to/store/squashfs/
-mksquashfs /mnt/myroot custom_root.squashfs
+cd $TMPSTORE
+dir_size=$(sudo du -sm /mnt/myroot | awk '{print $1}')
+img_size=$((dir_size + 200))
+dd if=/dev/zero of=rootfs.img bs=1M count=$img_size
+mkfs.ext4 rootfs.img
+
+sudo mkdir -p /mnt/rootimg
+sudo mount -o loop rootfs.img /mnt/rootimg
+sudo cp -a /mnt/myroot* /mnt/rootimg
+sudo umount /mnt/rootimg
+mkdir -p LiveOS
+mv rootfs.img LiveOS/
+mksquashfs LiveOS custom_root.squashfs -comp xz
 ```
+
+
+create_squashfs_from_rootfs() {
+    # Check if the directory exists
+    if [ ! -d "$TMP_SQUASHFS_DIR/lib/modules/" ]; then
+        echo "Directory $TMP_SQUASHFS_DIR/lib/modules/ does not exist"
+        return 1
+    fi
+
+    # Calculate the size of the directory and create the rootfs image
+    dir_size=$(sudo du -sm "$TMP_SQUASHFS_DIR" | awk '{print $1}')
+    img_size=$((dir_size + 200))
+    dd if=/dev/zero of=rootfs.img bs=1M count=$img_size
+    mkfs.ext4 rootfs.img
+
+    # Mount the image and copy contents
+    sudo mount -o loop rootfs.img /mnt
+    sudo cp -a $TMP_SQUASHFS_DIR/* /mnt/
+    sudo umount /mnt
+
+    # Move rootfs.img into LiveOS directory
+    mkdir -p LiveOS
+    mv rootfs.img LiveOS/
+
+    # Create the SquashFS filesystem
+    sudo mksquashfs LiveOS "$SQUASHFS_OUTPUT_PATH" -comp xz
+
+    echo "SquashFS file system has been created as $SQUASHFS_OUTPUT_PATH"
+}
+
 
 ## 3. Extracting Kernel and Initramfs
 
@@ -80,37 +133,28 @@ LOOP_DEVICE=/dev/nbd0
 Now, use `parted` to set up partitions automatically:
 
 ```bash
-#!/bin/bash
 sudo parted -s $LOOP_DEVICE mklabel gpt
-
-# Create an EFI System Partition
 sudo parted -s $LOOP_DEVICE mkpart primary fat32 1MiB 513MiB
-sudo parted $LOOP_DEVICE set 1 esp on
-
-# Create a BIOS Boot Partition
-sudo parted -s $LOOP_DEVICE mkpart primary 513MiB 515MiB
-sudo parted $LOOP_DEVICE set 2 bios_grub on
-
-# Create the main partition
-sudo parted -s $LOOP_DEVICE mkpart primary ext4 515MiB 100%
+sudo parted -s $LOOP_DEVICE set 1 esp on
+sudo parted -s $LOOP_DEVICE mkpart primary ext4 513MiB 100%
 ```
 
-<!-- Format the partitions:
+Format the partitions:
 
 ```bash
 sudo mkfs.vfat ${LOOP_DEVICE}p1
 sudo mkfs.ext4 ${LOOP_DEVICE}p2
-``` -->
+```
 
 ### 3. Mounting and Copying Data:
 
 Mount the partitions:
 
 ```bash
-mkdir -p /mnt/virtual_usb_efi
-mkdir -p /mnt/virtual_usb_os
+sudo mkdir -p /mnt/virtual_usb_efi
+sudo mkdir -p /mnt/virtual_usb_os
 sudo mount ${LOOP_DEVICE}p1 /mnt/virtual_usb_efi
-sudo mount ${LOOP_DEVICE}p3 /mnt/virtual_usb_os
+sudo mount ${LOOP_DEVICE}p2 /mnt/virtual_usb_os
 ```
 
 Now you can copy your data, kernel, initramfs, and other necessary files into `/mnt/virtual_usb_os`.
@@ -217,6 +261,11 @@ menuentry 'Custom Boot' {
 }
 ```
 
+## 5.5. Set label for usb device partition
+```
+sudo e2label /dev/sdx3 MY_LIVE_SYSTEM
+```
+
 ## 6. Booting from the Virtual USB
 
 Run:
@@ -235,3 +284,16 @@ dd if=virtual_usb.qcow2 of=/dev/sdX bs=4M status=progress
 
 **Caution:** Replace `/dev/sdX` with your USB drive's device path. Ensure you pick the correct device to avoid data loss.
 
+
+#### EXAMPLE GRUB
+```
+
+set timeout=10
+set default=0
+
+menuentry 'My Custom RHEL8' {
+  search --no-floppy --set=root --label MY_LIVE_SYSTEM
+  linux /boot/vmlinuz rootfstype=squashfs rootflags=loop real_root=/boot/myroot.squashfs
+  initrd /boot/initramfs
+}
+```
