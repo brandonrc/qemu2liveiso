@@ -7,6 +7,11 @@ USB_NBD="/dev/nbd0"
 USB_EFI_DIR="/mnt/virtual_usb_efi"
 USB_OS_DIR="/mnt/virtual_usb_os"
 
+# MKSQUASHY
+TMP_DIR="/tmp/rhel-live-$(date '+%Y%m%d%H%M%S')"
+MOUNT_POINT="$TMP_DIR/mnt"
+ROOTFS_IMG="$TMP_DIR/LiveOS/rootfs.img"
+
 # Determine if running on Ubuntu or RHEL
 if [[ $(grep -Ei 'debian|ubuntu' /etc/os-release) ]]; then
     GRUB_CMD="grub-install"
@@ -125,10 +130,7 @@ copy_fedora_files() {
 
 qcow2_to_squash() {
     log "Converting qcow2 to squashfs"
-    local TMP_DIR
-    TMP_DIR="/tmp/rhel-live-$(date '+%Y%m%d%H%M%S')"
-    local MOUNT_POINT="$TMP_DIR/mnt"
-    local ROOTFS_IMG="$TMP_DIR/LiveOS/rootfs.img"
+
 
     log "Creating temporary directory structure..."
     sudo mkdir -p "$TMP_DIR/LiveOS" "$MOUNT_POINT"
@@ -142,7 +144,7 @@ qcow2_to_squash() {
     log "Mounting the ext4 image and copying data..."
     sudo mount -o loop "$ROOTFS_IMG" "$MOUNT_POINT"
     sudo cp -a "$RHEL_MNT/"* "$MOUNT_POINT/"
-    sudo umount "$MOUNT_POINT"
+
 
     log "Creating squashfs.img from directory contents..."
     # This will create a squashfs image of the LiveOS directory and its contents
@@ -151,7 +153,7 @@ qcow2_to_squash() {
     log "Cleaning up temporary directory (keeping squashfs.img)..."
     sudo mkdir -p $USB_OS_DIR/LiveOS
     sudo mv "$TMP_DIR/squashfs.img" $USB_OS_DIR/LiveOS
-    sudo rm -rf "$TMP_DIR"
+
 }
 
 
@@ -160,10 +162,12 @@ final_cleanup() {
     sudo umount $USB_EFI_DIR
     sudo umount $USB_OS_DIR
     sudo umount $RHEL_MNT
+    sudo umount "$MOUNT_POINT"
     sudo qemu-nbd --disconnect $USB_NBD
     sudo qemu-nbd --disconnect $RHEL_NBD
     sudo modprobe -r nbd 
     sudo umount -l -f /mnt/fedora /mnt/squash /mnt/rootfs
+    sudo rm -rf "$TMP_DIR"
 }
 
 main() {
