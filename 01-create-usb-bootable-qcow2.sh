@@ -17,8 +17,8 @@ else
     exit 1
 fi
 
-FEDORA_ISO="$HOME/Downloads/Fedora.iso"
-RHEL_QCOW2="$HOME/Downloads/rhel.qcow2"
+FEDORA_ISO="$HOME/Fedora.iso"
+RHEL_QCOW2="$HOME/rhel.qcow2"
 RHEL_NBD="/dev/nbd1"
 RHEL_MNT="/mnt/rhel"
 
@@ -86,7 +86,8 @@ setup_USB_NBD() {
     sudo mkdir -p $USB_EFI_DIR $USB_OS_DIR $RHEL_MNT
     sudo mount ${USB_NBD}p1 $USB_EFI_DIR
     sudo mount ${USB_NBD}p3 $USB_OS_DIR
-    sudo mount ${RHEL_NBD}p2 $RHEL_MNT
+    # TODO... needs to be dynamic to find the largest partition? 
+    sudo mount ${RHEL_NBD}p3 $RHEL_MNT
 }
 
 install_grub() {
@@ -97,7 +98,10 @@ install_grub() {
 
 create_grub_config() {
     log "Creating grub config"
-    grub_cfg_path="$USB_OS_DIR/boot/grub/grub.cfg"
+    # Check to see if we are using RHEL
+    # RHEL = grub2/grub.cfg
+    # Ubuntu = grub/grub.cfg
+    grub_cfg_path="$USB_OS_DIR/boot/grub2/grub.cfg"
     sudo mkdir -p "$(dirname "$grub_cfg_path")"
     sudo cp /mnt/fedora/EFI/BOOT/grub.cfg $grub_cfg_path
 }
@@ -127,26 +131,27 @@ qcow2_to_squash() {
     local ROOTFS_IMG="$TMP_DIR/LiveOS/rootfs.img"
 
     log "Creating temporary directory structure..."
-    mkdir -p "$TMP_DIR/LiveOS" "$MOUNT_POINT"
+    sudo mkdir -p "$TMP_DIR/LiveOS" "$MOUNT_POINT"
     
     log "Creating ext4 image (rootfs.img)..."
     # Create a blank ext4 image. Adjust the size as necessary (here, 5G is used).
-    dd if=/dev/zero of="$ROOTFS_IMG" bs=1M count=5120
-    mkfs.ext4 "$ROOTFS_IMG"
-    tune2fs -L "Anaconda" "$ROOTFS_IMG"
+    sudo dd if=/dev/zero of="$ROOTFS_IMG" bs=1M count=5120
+    sudo mkfs.ext4 "$ROOTFS_IMG"
+    sudo tune2fs -L "Anaconda" "$ROOTFS_IMG"
     
     log "Mounting the ext4 image and copying data..."
-    mount -o loop "$ROOTFS_IMG" "$MOUNT_POINT"
-    cp -a "$RHEL_MNT/"* "$MOUNT_POINT/"
-    umount "$MOUNT_POINT"
+    sudo mount -o loop "$ROOTFS_IMG" "$MOUNT_POINT"
+    sudo cp -a "$RHEL_MNT/"* "$MOUNT_POINT/"
+    sudo umount "$MOUNT_POINT"
 
     log "Creating squashfs.img from directory contents..."
     # This will create a squashfs image of the LiveOS directory and its contents
-    mksquashfs "$TMP_DIR/LiveOS" "$TMP_DIR/squashfs.img" -b 131072
+    sudo mksquashfs "$TMP_DIR/LiveOS" "$TMP_DIR/squashfs.img" -b 131072
 
     log "Cleaning up temporary directory (keeping squashfs.img)..."
-    mv "$TMP_DIR/squashfs.img" .
-    rm -rf "$TMP_DIR"
+    sudo mkdir -p $USB_OS_DIR/LiveOS
+    sudo mv "$TMP_DIR/squashfs.img" $USB_OS_DIR/LiveOS
+    sudo rm -rf "$TMP_DIR"
 }
 
 
@@ -154,8 +159,10 @@ final_cleanup() {
     log "Cleaning up..."
     sudo umount $USB_EFI_DIR
     sudo umount $USB_OS_DIR
+    sudo umount $RHEL_MNT
     sudo qemu-nbd --disconnect $USB_NBD
-    sudo modprobe -r nbd
+    sudo qemu-nbd --disconnect $RHEL_NBD
+    sudo modprobe -r nbd 
     sudo umount -l -f /mnt/fedora /mnt/squash /mnt/rootfs
 }
 
