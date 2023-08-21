@@ -38,6 +38,7 @@ mount_fedora_images() {
 
 # Check and load nbd module
 load_nbd_module() {
+    log "Loading nbd module"
     if ! lsmod | grep -q "^nbd "; then
         log "Loading nbd module..."
         sudo modprobe nbd max_part=16
@@ -48,6 +49,7 @@ load_nbd_module() {
 
 # Cleanup function to ensure no stale mounts or nbd connections
 cleanup() {
+    log "Cleaning up"
     for device in $USB_NBD $RHEL_NBD; do
         if lsblk | grep -q ${device##*/}; then
             log "Cleaning up existing /dev/$device connection..."
@@ -60,6 +62,7 @@ cleanup() {
 }
 
 setup_USB_NBD() {
+    log "Setting up USB NBD"
     sudo qemu-img create -f qcow2 virtual_usb.qcow2 5G
     sudo qemu-nbd --connect=$USB_NBD virtual_usb.qcow2
     sudo qemu-nbd --connect=$RHEL_NBD "$RHEL_QCOW2"
@@ -87,11 +90,13 @@ setup_USB_NBD() {
 }
 
 install_grub() {
+    log "Installing grub"
     sudo cp -r /mnt/fedora/EFI/* $USB_EFI_DIR
     sudo $GRUB_CMD --target=i386-pc --boot-directory=$USB_OS_DIR/boot $USB_NBD
 }
 
 create_grub_config() {
+    log "Creating grub config"
     grub_cfg_path="$USB_OS_DIR/boot/grub/grub.cfg"
     sudo mkdir -p "$(dirname "$grub_cfg_path")"
     sudo cp /mnt/fedora/EFI/BOOT/grub.cfg $grub_cfg_path
@@ -115,6 +120,7 @@ copy_fedora_files() {
 }
 
 qcow2_to_squash() {
+    log "Converting qcow2 to squashfs"
     local TMP_DIR
     TMP_DIR="/tmp/rhel-live-$(date '+%Y%m%d%H%M%S')"
     local MOUNT_POINT="$TMP_DIR/mnt"
