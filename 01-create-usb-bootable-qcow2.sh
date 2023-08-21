@@ -133,6 +133,7 @@ qcow2_to_squash() {
 
 
     log "Creating temporary directory structure..."
+    echo "sudo mkdir -p $TMP_DIR/LiveOS $MOUNT_POINT"
     sudo mkdir -p "$TMP_DIR/LiveOS" "$MOUNT_POINT"
     
     log "Creating ext4 image (rootfs.img)..."
@@ -163,6 +164,7 @@ final_cleanup() {
     sudo umount $USB_OS_DIR
     sudo umount $RHEL_MNT
     sudo umount "$MOUNT_POINT"
+
     sleep 1
     sudo qemu-nbd --disconnect $USB_NBD
     sudo qemu-nbd --disconnect $RHEL_NBD
