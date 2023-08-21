@@ -160,10 +160,10 @@ qcow2_to_squash() {
 
 final_cleanup() {
     log "Cleaning up..."
-    sudo umount $USB_EFI_DIR
-    sudo umount $USB_OS_DIR
-    sudo umount $RHEL_MNT
-    sudo umount "$MOUNT_POINT"
+    sudo umount -l $USB_EFI_DIR
+    sudo umount -l $USB_OS_DIR
+    sudo umount -l $RHEL_MNT
+    sudo umount -l "$MOUNT_POINT"
 
     sleep 1
     sudo qemu-nbd --disconnect $USB_NBD
