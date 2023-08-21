@@ -30,7 +30,7 @@ log() {
 mount_fedora_images() {
     log "Mounting Fedora images"
     sudo mkdir -p /mnt/fedora /mnt/squash /mnt/rootfs
-    sudo umount -l -f /mnt/fedora /mnt/squash /mnt/rootfs
+    sudo umount -l -f /mnt/fedora /mnt/squash /mnt/rootfs || echo "Failed to unmount..."
     sudo mount -o loop $FEDORA_ISO /mnt/fedora
     sudo mount -o loop /mnt/fedora/LiveOS/squashfs.img /mnt/squash
     sudo mount -o loop /mnt/squash/LiveOS/rootfs.img /mnt/rootfs
