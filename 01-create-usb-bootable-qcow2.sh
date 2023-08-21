@@ -163,6 +163,7 @@ final_cleanup() {
     sudo umount $USB_OS_DIR
     sudo umount $RHEL_MNT
     sudo umount "$MOUNT_POINT"
+    sleep 1
     sudo qemu-nbd --disconnect $USB_NBD
     sudo qemu-nbd --disconnect $RHEL_NBD
     sudo modprobe -r nbd 
