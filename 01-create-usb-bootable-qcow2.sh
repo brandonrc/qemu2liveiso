@@ -114,6 +114,36 @@ copy_fedora_files() {
     sudo cp "$INITRAMFS" $USB_OS_DIR/images/pxeboot/initrd
 }
 
+qcow2_to_squash() {
+    local TMP_DIR
+    TMP_DIR="/tmp/rhel-live-$(date '+%Y%m%d%H%M%S')"
+    local MOUNT_POINT="$TMP_DIR/mnt"
+    local ROOTFS_IMG="$TMP_DIR/LiveOS/rootfs.img"
+
+    log "Creating temporary directory structure..."
+    mkdir -p "$TMP_DIR/LiveOS" "$MOUNT_POINT"
+    
+    log "Creating ext4 image (rootfs.img)..."
+    # Create a blank ext4 image. Adjust the size as necessary (here, 5G is used).
+    dd if=/dev/zero of="$ROOTFS_IMG" bs=1M count=5120
+    mkfs.ext4 "$ROOTFS_IMG"
+    tune2fs -L "Anaconda" "$ROOTFS_IMG"
+    
+    log "Mounting the ext4 image and copying data..."
+    mount -o loop "$ROOTFS_IMG" "$MOUNT_POINT"
+    cp -a "$RHEL_MNT/"* "$MOUNT_POINT/"
+    umount "$MOUNT_POINT"
+
+    log "Creating squashfs.img from directory contents..."
+    # This will create a squashfs image of the LiveOS directory and its contents
+    mksquashfs "$TMP_DIR/LiveOS" "$TMP_DIR/squashfs.img" -b 131072
+
+    log "Cleaning up temporary directory (keeping squashfs.img)..."
+    mv "$TMP_DIR/squashfs.img" .
+    rm -rf "$TMP_DIR"
+}
+
+
 final_cleanup() {
     log "Cleaning up..."
     sudo umount $USB_EFI_DIR
