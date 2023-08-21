@@ -112,8 +112,8 @@ copy_fedora_files() {
     sudo cp -r /mnt/fedora/isolinux $USB_OS_DIR
     sudo rm -f $USB_OS_DIR/isolinux/{vmlinuz,initrd.img}
     
-    VMLINUX=$(find $RHEL_MNT/boot/ -type f -name "vmlinuz*" ! -name "*rescue*" | sort -V | tail -n 1)
-    INITRAMFS=$(find $RHEL_MNT/boot/ -type f -name "initramfs*" ! -name "*rescue*" ! -name "*boot*" | sort -V | tail -n 1)
+    VMLINUX=$(sudo find $RHEL_MNT/boot/ -type f -name "vmlinuz*" ! -name "*rescue*" | sudo sort -V | sudo tail -n 1)
+    INITRAMFS=$(sudo find $RHEL_MNT/boot/ -type f -name "initramfs*" ! -name "*rescue*" ! -name "*boot*" | sudo sort -V | sudo tail -n 1)
 
     [[ -z "$VMLINUX" || -z "$INITRAMFS" ]] && { echo "VMLINUX and INITRAMFS are not defined"; exit 1; }
 
