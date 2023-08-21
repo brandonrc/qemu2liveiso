@@ -66,6 +66,35 @@ cleanup() {
     done
 }
 
+# setup_USB_NBD() {
+#     log "Setting up USB NBD"
+#     sudo qemu-img create -f qcow2 virtual_usb.qcow2 5G
+#     sudo qemu-nbd --connect=$USB_NBD virtual_usb.qcow2
+#     sudo qemu-nbd --connect=$RHEL_NBD "$RHEL_QCOW2"
+
+#     # Partition the loop device
+#     log "Partitioning the loop device..."
+#     sudo parted -s $USB_NBD mklabel gpt
+#     sudo parted -s $USB_NBD mkpart primary fat32 1MiB 513MiB
+#     sudo parted $USB_NBD set 1 esp on
+#     sudo parted -s $USB_NBD mkpart primary 513MiB 515MiB
+#     sudo parted $USB_NBD set 2 bios_grub on
+#     sudo parted -s $USB_NBD mkpart primary ext4 515MiB 100%
+
+#     # Format the partitions
+#     log "Formatting the partitions..."
+#     sudo mkfs.vfat ${USB_NBD}p1
+#     sudo mkfs.ext4 ${USB_NBD}p3
+
+#     sudo e2label ${USB_NBD}p3 MY_LIVE_SYSTEM
+
+#     sudo mkdir -p $USB_EFI_DIR $USB_OS_DIR $RHEL_MNT
+#     sudo mount ${USB_NBD}p1 $USB_EFI_DIR
+#     sudo mount ${USB_NBD}p3 $USB_OS_DIR
+#     # TODO... needs to be dynamic to find the largest partition? 
+#     sudo mount ${RHEL_NBD}p3 $RHEL_MNT
+# }
+
 setup_USB_NBD() {
     log "Setting up USB NBD"
     sudo qemu-img create -f qcow2 virtual_usb.qcow2 5G
@@ -74,26 +103,21 @@ setup_USB_NBD() {
 
     # Partition the loop device
     log "Partitioning the loop device..."
-    sudo parted -s $USB_NBD mklabel gpt
-    sudo parted -s $USB_NBD mkpart primary fat32 1MiB 513MiB
-    sudo parted $USB_NBD set 1 esp on
-    sudo parted -s $USB_NBD mkpart primary 513MiB 515MiB
-    sudo parted $USB_NBD set 2 bios_grub on
-    sudo parted -s $USB_NBD mkpart primary ext4 515MiB 100%
+    sudo parted -s $USB_NBD mklabel msdos  # Use MBR partitioning scheme
+    sudo parted -s $USB_NBD mkpart primary ext4 1MiB 100%
 
     # Format the partitions
     log "Formatting the partitions..."
-    sudo mkfs.vfat ${USB_NBD}p1
-    sudo mkfs.ext4 ${USB_NBD}p3
+    sudo mkfs.ext4 ${USB_NBD}p1
 
-    sudo e2label ${USB_NBD}p3 MY_LIVE_SYSTEM
+    sudo e2label ${USB_NBD}p1 MY_LIVE_SYSTEM
 
-    sudo mkdir -p $USB_EFI_DIR $USB_OS_DIR $RHEL_MNT
-    sudo mount ${USB_NBD}p1 $USB_EFI_DIR
-    sudo mount ${USB_NBD}p3 $USB_OS_DIR
+    sudo mkdir -p $USB_OS_DIR $RHEL_MNT
+    sudo mount ${USB_NBD}p1 $USB_OS_DIR
     # TODO... needs to be dynamic to find the largest partition? 
-    sudo mount ${RHEL_NBD}p3 $RHEL_MNT
+    sudo mount ${RHEL_NBD}p3 $RHEL_MNT  # Adjusting partition number as per your layout
 }
+
 
 install_grub() {
     log "Installing grub"
@@ -114,7 +138,7 @@ create_grub_config() {
 copy_fedora_files() {
     log "Copying Fedora files..."
     sudo mkdir -p $USB_OS_DIR/images/pxeboot
-    sudo cp -r /mnt/fedora/isolinux $USB_OS_DIR
+    sudo cp -r /mnt/fedora/* $USB_OS_DIR
     sudo rm -f $USB_OS_DIR/isolinux/{vmlinuz,initrd.img}
     
     VMLINUX=$(sudo find $RHEL_MNT/boot/ -type f -name "vmlinuz*" ! -name "*rescue*" | sudo sort -V | sudo tail -n 1)
@@ -178,8 +202,8 @@ main() {
     load_nbd_module
     cleanup
     setup_USB_NBD
-    install_grub
-    create_grub_config
+    #install_grub
+    #create_grub_config
     copy_fedora_files
     qcow2_to_squash
     final_cleanup
