@@ -181,6 +181,7 @@ main() {
     install_grub
     create_grub_config
     copy_fedora_files
+    qcow2_to_squash
     final_cleanup
 }
 
