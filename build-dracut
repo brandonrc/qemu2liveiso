@@ -1,0 +1,9 @@
+#!/bin/bash
+
+sudo dracut --nomdadmconf --nolvmconf --xz \
+            --add 'livenet dmsquash-live dmsquash-live-ntfs convertfs pollcdrom qemu qemu-net' \
+            --add-drivers "squashfs" \
+            --omit 'iscsi plymouth' \
+            --no-hostonly --debug \
+            --no-early-microcode \
+            --force /tmp/initrd.img > /tmp/logs/dracut-build.txt 2>&1
